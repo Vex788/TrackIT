@@ -7,7 +7,9 @@ import trackit.demon.dto.UserCabinetDTO;
 import trackit.demon.dto.UserLoginDTO;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 @Entity
 @Data
@@ -32,7 +34,9 @@ public class CUser {
     @ElementCollection
     private Collection<SiteData> siteDataCollection;
 
-    private boolean isOnline;
+    private boolean isOnline = false;
+
+    private boolean accountConfirmed = false;
 
     public CUser(String nickname, String password, UserRole role, String email, String phoneNumber, boolean isOnline, String ip) {
         this.nickname = nickname;
@@ -44,8 +48,24 @@ public class CUser {
         this.ip = ip;
     }
 
-    public void addSearchStructureToCollection(SiteData siteData) {
-        siteDataCollection.add(siteData);
+    public boolean addSearchStructureToCollection(SiteData siteData) {
+        if (siteDataCollection == null || siteDataCollection.isEmpty())
+            siteDataCollection = new ArrayList<>();
+
+        if (!siteDataCollection.contains(siteData)) {
+            siteDataCollection.add(siteData);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void deleteSiteDataElement(int index) {
+        if (siteDataCollection != null || !siteDataCollection.isEmpty())
+        {
+            SiteData siteData = (SiteData) siteDataCollection.toArray()[index];
+            siteDataCollection.remove(siteData);
+        }
     }
 
     public static CUser of(String email, String password, boolean isOnline) {
@@ -65,7 +85,7 @@ public class CUser {
     }
 
     public RegistrationDTO toRegistrationDTO() {
-        return RegistrationDTO.of(email, password, nickname, phoneNumber);
+        return RegistrationDTO.of(email, password, null, nickname, phoneNumber);
     }
 
     public static CUser fromDTO(RegistrationDTO dto) {

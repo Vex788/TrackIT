@@ -2,7 +2,9 @@ package trackit.demon.configs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -10,10 +12,21 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import trackit.demon.providers.CustomAuthenticationProvider;
 import trackit.demon.services.UserDetailsServiceImpl;
 
+@Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private AuthenticationSuccessHandler authenticationSuccessHandler;
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        return new CustomAuthenticationProvider();
+    }
 
     @Bean
     public UserDetailsService userDetailsService() {
@@ -27,31 +40,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     public void registerGlobalAuthentication(AuthenticationManagerBuilder auth) throws Exception {
-        auth
+        auth    .authenticationProvider(authenticationProvider())
                 .userDetailsService(userDetailsService())
                 .passwordEncoder(passwordEncoder());
-
-        auth.inMemoryAuthentication()
-                .withUser("user").password("{noop}password").roles("USER")
-                .and()
-                .withUser("testvex@mail.com").password(passwordEncoder().encode("testvex")).roles("ADMIN");
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        // включаем защиту от CSRF атак
-        /*http.csrf()
-                .disable()
-                // указываем правила запросов
-                // по которым будет определятся доступ к ресурсам и остальным данным
-                .authorizeRequests()
-                .antMatchers("/resources/**", "/**").permitAll()
-                .anyRequest().permitAll()
-                .and();*/
-        /*http
-                .authorizeRequests()
-                .antMatchers("/**").authenticated()
-                .antMatchers("/**").permitAll();*/
         http
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
@@ -62,9 +57,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/**").permitAll()
-                .anyRequest().authenticated();
+                .anyRequest().authenticated()
+                .and()
+                .oauth2Login()
+                .loginPage("/oauth_login")
+                .successHandler(authenticationSuccessHandler);
 
-        http.formLogin()
+        /*http.formLogin()
                 // указываем страницу с формой логина
                 .loginPage("/login")
                 // указываем action с формы логина
@@ -72,10 +71,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // указываем URL при неудачном логине
                 .failureUrl("/login?error")
                 // Указываем параметры логина и пароля с формы логина
-                .usernameParameter("j_email")
-                .passwordParameter("j_password")
+                .usernameParameter("email")
+                .passwordParameter("password")
                 // даем доступ к форме логина всем
-                .permitAll();
+                .permitAll().and();
 
         http.logout()
                 // разрешаем делать логаут всем
@@ -85,7 +84,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // указываем URL при удачном логауте
                 .logoutSuccessUrl("/login?logout")
                 // делаем не валидной текущую сессию
-                .invalidateHttpSession(true);
-
+                .invalidateHttpSession(true);*/
     }
 }

@@ -9,23 +9,10 @@ import javax.persistence.Embeddable;
 @Data
 @NoArgsConstructor
 public class SiteData {
-    private String siteUrl;
-    private String xmlPathToPriceElement;
-    private double startedPrice;
-    private double finishPrice;
-    private boolean increase;
-
-    public SiteData(String siteUrl, String xmlPathToPriceElement, double startedPrice, double finishPrice) {
-        this.siteUrl = siteUrl;
-        this.xmlPathToPriceElement = xmlPathToPriceElement;
-        this.startedPrice = startedPrice;
-        this.finishPrice = finishPrice;
-    }
-
-    public SiteData(String siteUrl, String xmlPathToPriceElement, double startedPrice, boolean increase) {
-        this.siteUrl = siteUrl;
-        this.xmlPathToPriceElement = xmlPathToPriceElement;
-        this.startedPrice = startedPrice;
-        this.increase = increase;
-    }
+    private String siteTitle = null;
+    private String siteUrl = null;
+    private String currencyCodes = null;
+    private double startedPrice = 0.0d;
+    private double finishPrice = 0.0d;
+    private boolean increase = false;
 }

@@ -5,10 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 import trackit.demon.model.CUser;
+import trackit.demon.model.SiteData;
 import trackit.demon.model.UserRole;
 import trackit.demon.repository.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @EnableTransactionManagement
@@ -71,21 +74,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-    public void deleteSiteDataCollection(CUser CUser, long[] ids) {
-        if (ids == null) return;
-
-        for (long id : ids) {
-            CUser.getSiteDataCollection().remove(id);
-        }
+    public void deleteSiteDataElement(CUser user, int id) {
+        user.deleteSiteDataElement(id);
+        userRepository.save(user);
     }
 
     @Transactional
-    public boolean addUser(CUser CUser) {
-        if (CUser == null) return false;
-        if (userRepository.existsByEmailOrNickname(CUser.getEmail(), CUser.getNickname()))
+    public void deleteSiteDataCollection(CUser user, long[] ids) {
+        if (ids == null) return;
+
+        for (long id : ids) {
+            user.getSiteDataCollection().remove(id);
+        }
+
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public boolean addUser(CUser user) {
+        if (user == null) return false;
+        if (userRepository.existsByEmailOrNickname(user.getEmail(), user.getNickname()))
             return false;
 
-        userRepository.save(CUser);
+        userRepository.save(user);
         return true;
     }
 

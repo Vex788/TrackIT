@@ -2,7 +2,7 @@ package trackit.demon.mail;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import trackit.demon.html_parser.SearchValueInHtml;
+import trackit.demon.html.parser.SearchValueInHtml;
 import trackit.demon.model.CUser;
 import trackit.demon.model.SiteData;
 import trackit.demon.services.UserServiceImpl;
@@ -19,7 +19,6 @@ public class EmailScheduler {
     private UserServiceImpl userService;
 
     private SearchValueInHtml search;
-    private boolean found = false;
 
     private boolean conditionIsMet(double startedPrice, double finishPrice, boolean increase, double currentPrice) {
         if (finishPrice != 0) {
@@ -56,7 +55,10 @@ public class EmailScheduler {
                 if (CUser.getSiteDataCollection() != null && !CUser.getSiteDataCollection().isEmpty()) {
                     for (SiteData siteData : CUser.getSiteDataCollection()) {
                         search = new SearchValueInHtml();
-                        found = search.getData(siteData.getSiteUrl(), String.valueOf(siteData.getStartedPrice())); // search price on a page
+                        String[] currencyCodes = new String[2];
+                        currencyCodes = siteData.getCurrencyCodes().split("/");
+
+                        boolean found = search.getData(siteData.getSiteUrl(), currencyCodes[0], currencyCodes[1]); // search price on a page
 
                         if (found) {
                             if (conditionIsMet(

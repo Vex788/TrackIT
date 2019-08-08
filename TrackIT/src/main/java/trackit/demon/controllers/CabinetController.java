@@ -3,17 +3,20 @@ package trackit.demon.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import trackit.demon.dto.RegistrationDTO;
 import trackit.demon.dto.UserCabinetDTO;
-import trackit.demon.html_parser.SearchValueInHtml;
+import trackit.demon.html.parser.SearchValueInHtml;
+import trackit.demon.mail.EmailService;
 import trackit.demon.message.Message;
 import trackit.demon.model.CUser;
 import trackit.demon.model.SiteData;
 import trackit.demon.services.UserServiceImpl;
 
-import java.util.ArrayList;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/cabinet")
@@ -22,25 +25,73 @@ public class CabinetController {
     @Autowired
     private UserServiceImpl userService;
 
-    private CUser getDBUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else {
-            username = principal.toString();
-        }
+    @Autowired
+    private EmailService emailService;
 
-        System.out.println(username);
-        CUser dbCUser = userService.findByEmail(username);
+    private CUser getDBUser(HttpServletRequest request) {
+        HttpSession session = request.getSession(true);
+
+        SecurityContext securityContext = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
+
+        CUser dbCUser = userService.findByEmail(securityContext.getAuthentication().getName());
 
         return dbCUser;
     }
 
+    @PostMapping("/edit")
+    public ResponseEntity<Message> onEdit(@RequestBody RegistrationDTO registrationDTO,
+                                          HttpServletRequest request) {
+        ResponseEntity<Message> responseEntity = null;
+        CUser user = getDBUser(request);
+
+        if (user != null) {
+            if (user.isAccountConfirmed()) {
+                if (!registrationDTO.getEmail().isEmpty() && !registrationDTO.getEmail().equals(user.getEmail())) {
+                    user.setEmail(registrationDTO.getEmail());
+                    user.setAccountConfirmed(false);
+
+                    new Thread(() -> emailService.sendVerifyEmailMessage(user.toUserCabinetDTO(),
+                            "http://localhost:8080/email/verify?id=" + user.getId() +
+                                    "&token=" + passwordEncoder.encode(user.getEmail()))).start();
+                }
+                if (!registrationDTO.getNickname().isEmpty()) {
+                    user.setNickname(registrationDTO.getNickname());
+                }
+                // For delete and added phone number
+                user.setPhoneNumber(registrationDTO.getPhoneNumber());
+
+                userService.updateUser(user);
+
+                responseEntity = new ResponseEntity<>(
+                        new Message("/cabinet/edit",
+                                "Data edited."),
+                        HttpStatus.OK
+                );
+            } else {
+                responseEntity = new ResponseEntity<>(
+                        new Message(user.getId(),
+                                "/cabinet/add_task",
+                                "Email confirmation required."),
+                        HttpStatus.NOT_EXTENDED
+                );
+            }
+        }
+        if (responseEntity == null) {
+            responseEntity = new ResponseEntity<>(
+                    new Message("/cabinet/edit",
+                            "Unauthorized."),
+                    HttpStatus.UNAUTHORIZED
+            );
+        }
+        return responseEntity;
+    }
+
     @GetMapping("/get")
-    public ResponseEntity<UserCabinetDTO> onGet() {
-        CUser dbCUser = getDBUser();
+    public ResponseEntity<UserCabinetDTO> onGet(HttpServletRequest request) {
+        CUser dbCUser = getDBUser(request);
 
         if (dbCUser != null) {
             return new ResponseEntity<>(dbCUser.toUserCabinetDTO(), HttpStatus.OK);
@@ -48,106 +99,150 @@ public class CabinetController {
 
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
-
+    // ToDo: add html integrity
     @PostMapping("/add_task")
-    public ResponseEntity<Message> onAddTask(@RequestBody SiteData siteData) {
-        CUser dbCUser = getDBUser();
+    public ResponseEntity<Message> onAddTask(@RequestBody SiteData siteData, HttpServletRequest request) {
+        ResponseEntity<Message> responseEntity = null;
+        CUser dbCUser = getDBUser(request);
 
         if (dbCUser != null) {
-            if (!dbCUser.getSiteDataCollection().contains(siteData)) {
-                SearchValueInHtml search = new SearchValueInHtml();
-                boolean found = search.getData(siteData.getSiteUrl(), String.valueOf(siteData.getStartedPrice()));
+            if (dbCUser.isAccountConfirmed()) {
+                if (dbCUser.getRole().toString().equals("USER") && dbCUser.getSiteDataCollection().size() < 5
+                        || dbCUser.getRole().toString().equals("VIP") && dbCUser.getSiteDataCollection().size() < 25
+                        || dbCUser.getRole().toString().equals("ADMIN") && dbCUser.getSiteDataCollection().size() < 100) {
+                    if ((siteData.getSiteUrl() != null && !siteData.getSiteUrl().isEmpty())
+                            || siteData.getCurrencyCodes() != null && !siteData.getCurrencyCodes().isEmpty()) {
+                        SearchValueInHtml search = new SearchValueInHtml();
+                        String[] currencyCodes = new String[2];
 
-                if (found) {
-                    siteData.setXmlPathToPriceElement(search.getXPath());
-                    dbCUser.addSearchStructureToCollection(siteData);
-                    userService.updateUser(dbCUser);
+                        if (siteData.getSiteUrl() == null || siteData.getSiteUrl().isEmpty()
+                                && siteData.getCurrencyCodes().split("/").length == 2) {
+                            currencyCodes = siteData.getCurrencyCodes().split("/"); // get 2 currency codes
+                        }
 
-                    return new ResponseEntity<>(
-                            new Message(dbCUser.getId(),
-                                    "/add_task",
-                                    "Price found."),
-                            HttpStatus.OK
-                    );
+                        boolean found = search.getData(siteData.getSiteUrl().trim(), currencyCodes[0], currencyCodes[1]);
+
+                        if (found) {
+                            siteData.setSiteTitle(search.getSiteTitle());
+                            siteData.setStartedPrice(Double.parseDouble(search.getPriceValue()));
+
+                            if (!dbCUser.addSearchStructureToCollection(siteData)) {
+                                return new ResponseEntity<>(
+                                        new Message(dbCUser.getId(),
+                                                "/cabinet/add_task",
+                                                "Already exists."),
+                                        HttpStatus.NOT_EXTENDED
+                                );
+                            }
+
+                            userService.updateUser(dbCUser);
+
+                            responseEntity = new ResponseEntity<>(
+                                    new Message(dbCUser.getId(),
+                                            "/cabinet/add_task",
+                                            "Title: " + siteData.getSiteTitle()
+                                                    + "<br>Current price: " + siteData.getStartedPrice() + "<br>"),
+                                    HttpStatus.OK
+                            );
+                        } else {
+                            responseEntity = new ResponseEntity<>(
+                                    new Message(dbCUser.getId(),
+                                            "/cabinet/add_task",
+                                            "Price not found."),
+                                    HttpStatus.NOT_FOUND
+                            );
+                        }
+                    } else {
+                        responseEntity = new ResponseEntity<>(
+                                new Message(dbCUser.getId(),
+                                        "/cabinet/add_task",
+                                        "Empty all fields."),
+                                HttpStatus.BAD_REQUEST
+                        );
+                    }
                 } else {
-                    return new ResponseEntity<>(
+                    responseEntity = new ResponseEntity<>(
                             new Message(dbCUser.getId(),
-                                    "/add_task",
-                                    "Price not found."),
-                            HttpStatus.NOT_FOUND
+                                    "/cabinet/add_task",
+                                    "Registered users can track up to 5 trackers.<br>If you bought a subscription, then the maximum number of 25 trackers."),
+                            HttpStatus.LENGTH_REQUIRED
                     );
                 }
             } else {
-                return new ResponseEntity<>(
+                responseEntity = new ResponseEntity<>(
                         new Message(dbCUser.getId(),
-                                "/add_task",
-                                "Already exists."),
-                        HttpStatus.IM_USED
+                                "/cabinet/add_task",
+                                "Email confirmation required."),
+                        HttpStatus.NOT_EXTENDED
                 );
             }
         }
-
-        return new ResponseEntity<>(
-                new Message("/add_task",
-                        "Unauthorized."),
-                HttpStatus.UNAUTHORIZED
-        );
+        if (responseEntity == null) {
+            responseEntity = new ResponseEntity<>(
+                    new Message("/cabinet/add_task",
+                            "Unauthorized."),
+                    HttpStatus.UNAUTHORIZED
+            );
+        }
+        return responseEntity;
     }
-
-    @PostMapping("/edit_task")
+    // Editing task coming soon
+    /*@PostMapping("/edit_task")
     public ResponseEntity<Message> onEditTask(@RequestParam("index") int index,
-                                             @RequestBody SiteData siteData) {
+                                              HttpServletRequest request) {
+        ResponseEntity<Message> responseEntity = null;
         if (index > -1) {
-            CUser dbCUser = getDBUser();
+            CUser dbCUser = getDBUser(request);
 
             if (dbCUser != null) {
-                new ArrayList<>(dbCUser.getSiteDataCollection()).set(index, siteData); // update data in element
+                new ArrayList<>(dbCUser.getSiteDataCollection())
+                        .set(index, (SiteData) dbCUser.getSiteDataCollection().toArray()[index]); // update data in element
                 userService.updateUser(dbCUser);
 
-                return new ResponseEntity<>(
+                responseEntity = new ResponseEntity<>(
                         new Message(dbCUser.getId(),
-                                "/edit_task",
+                                "/cabinet/edit_task",
                                 "Edit task success."),
                         HttpStatus.OK
                 );
             } else {
-                return new ResponseEntity<>(
-                        new Message("/edit_task",
+                responseEntity = new ResponseEntity<>(
+                        new Message("/cabinet/edit_task",
                                 "Unauthorized."),
                         HttpStatus.UNAUTHORIZED);
             }
         }
-
-        return new ResponseEntity<>(
-                new Message("/edit_task",
-                        "Some error."),
-                HttpStatus.BAD_REQUEST);
-    }
+        if (responseEntity == null) {
+            responseEntity = new ResponseEntity<>(
+                    new Message("/cabinet/edit_task",
+                            "Some error."),
+                    HttpStatus.BAD_REQUEST);
+        }
+        return responseEntity;
+    }*/
 
     @PostMapping("/delete_task")
-    public ResponseEntity<Message> onDeleteTask(@RequestParam(name = "toDelete[]", required = false) long[] ids) {
-        if (ids != null) {
-            userService.deleteSiteDataCollection(getDBUser(), ids);
-            return new ResponseEntity<>(
-                    new Message("/delete_task",
-                            "Delete task success."),
-                    HttpStatus.OK);
+    public ResponseEntity<Message> onDeleteTask(@RequestParam(name = "index") int index,
+                                                HttpServletRequest request) {
+        ResponseEntity<Message> responseEntity = null;
+
+        if (index > -1) {
+            CUser user = getDBUser(request);
+
+            if (index < user.getSiteDataCollection().size()) {
+                userService.deleteSiteDataElement(user, index);
+                responseEntity = new ResponseEntity<>(
+                        new Message("/cabinet/delete_task",
+                                "Delete task success."),
+                        HttpStatus.OK);
+            }
         }
-
-        return new ResponseEntity<>(
-                new Message("/edit_task",
-                        "Some error."),
-                HttpStatus.BAD_REQUEST);
-    }
-
-    @GetMapping("/spring_test")
-    public ResponseEntity<Message> onSpringTest() {
-        System.out.println(userService.findByEmail("testvex@mail.com").getPassword());
-        if (getDBUser() != null)
-        return new ResponseEntity<>(new Message("/spring_test", "test success"), HttpStatus.OK);
-        return new ResponseEntity<>(
-                new Message("/spring_test",
-                        "Unauthorized."),
-                HttpStatus.UNAUTHORIZED);
+        if (responseEntity == null) {
+            responseEntity = new ResponseEntity<>(
+                    new Message("/cabinet/edit_task",
+                            "Some error."),
+                    HttpStatus.BAD_REQUEST);
+        }
+        return responseEntity;
     }
 }
