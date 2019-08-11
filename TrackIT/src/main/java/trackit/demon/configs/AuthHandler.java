@@ -5,13 +5,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import trackit.demon.mail.EmailService;
 import trackit.demon.model.CUser;
+import trackit.demon.model.UserRole;
 import trackit.demon.providers.CustomAuthenticationProvider;
 import trackit.demon.services.UserServiceImpl;
 
@@ -27,9 +27,6 @@ public class AuthHandler implements AuthenticationSuccessHandler {
 
     @Autowired
     private UserServiceImpl userService;
-
-    @Autowired
-    private EmailService emailService;
 
     @Autowired
     private CustomAuthenticationProvider authenticationProvider;
@@ -56,6 +53,7 @@ public class AuthHandler implements AuthenticationSuccessHandler {
             newUser.setEmail((String) attributes.get("email"));
             newUser.setNickname((String) attributes.get("name"));
             newUser.setPassword(getRandomPassword());
+            newUser.setRole(UserRole.USER);
             newUser.setOnline(true);
 
             userService.addUser(newUser);

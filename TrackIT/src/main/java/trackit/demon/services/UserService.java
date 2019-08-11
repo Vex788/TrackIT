@@ -1,8 +1,10 @@
 package trackit.demon.services;
 
 import trackit.demon.model.CUser;
+import trackit.demon.model.SiteData;
 import trackit.demon.model.UserRole;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface UserService {
@@ -17,6 +19,8 @@ public interface UserService {
     CUser findByNickname(String nickname);
 
     CUser findByEmail(String email);
+
+    Collection<SiteData> getSiteDataCollection(long userID);
 
     boolean existsByNickname(String nickname);
 

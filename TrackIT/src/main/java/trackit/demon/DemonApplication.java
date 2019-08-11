@@ -38,7 +38,7 @@ public class DemonApplication {
             );
             user.setAccountConfirmed(true);
 
-            SiteData siteData = new SiteData();
+            /*SiteData siteData = new SiteData();
 
             siteData.setSiteTitle("some description");
             siteData.setSiteUrl("some_url");
@@ -61,7 +61,7 @@ public class DemonApplication {
 
             user.addSearchStructureToCollection(siteData);
             user.addSearchStructureToCollection(siteData2);
-            user.addSearchStructureToCollection(siteData3);
+            user.addSearchStructureToCollection(siteData3);*/
 
             if (userService.addUser(user)) System.out.println("Admin added.");
         };

@@ -9,9 +9,8 @@ import trackit.demon.model.SiteData;
 import trackit.demon.model.UserRole;
 import trackit.demon.repository.UserRepository;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @EnableTransactionManagement
@@ -20,11 +19,13 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
 
     @Override
+    @Transactional
     public long count() {
         return userRepository.count();
     }
 
     @Override
+    @Transactional
     public void clear() {
         userRepository.deleteAll();
     }
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public CUser findById(long id) {
         return userRepository.findById(id);
     }
@@ -47,6 +49,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public CUser findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    @Override
+    @Transactional
+    public Collection<SiteData> getSiteDataCollection(long userID) {
+        return findById(userID).getSiteDataCollection();
     }
 
     @Transactional

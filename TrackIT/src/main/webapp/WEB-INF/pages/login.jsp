@@ -19,7 +19,7 @@
 <body style="background-color: #444349;background-image: url(../../assets/img/pattern.png);background-repeat: no-repeat;background-size: cover;">
     <header class="masthead text-center text-white d-flex" style="font-family: 'Open Sans', sans-serif;background-color: rgba(255,255,255,0);">
         <nav class="navbar navbar-light navbar-expand-lg fixed-top bg-dark" id="mainNav" style="-webkit-box-shadow: 0px 3px 20px 0px rgba(0,0,0,0.75);-moz-box-shadow: 0px 3px 20px 0px rgba(0,0,0,0.75);box-shadow: 0px 3px 20px 0px rgba(0,0,0,0.75);font-family: Roboto, sans-serif;">
-            <div class="container"><a class="navbar-brand js-scroll-trigger" href="index.html">Trackit</a><button class="navbar-toggler navbar-toggler-right" data-toggle="collapse" data-target="#navbarResponsive" type="button" aria-controls="navbarResponsive" aria-expanded="false"
+            <div class="container"><a class="navbar-brand js-scroll-trigger" href="#">Trackit</a><button class="navbar-toggler navbar-toggler-right" data-toggle="collapse" data-target="#navbarResponsive" type="button" aria-controls="navbarResponsive" aria-expanded="false"
                     aria-label="Toggle navigation"><i class="fa fa-align-justify" style="color: rgba(255,255,255,0.9);"></i></button>
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="nav navbar-nav ml-auto">
@@ -62,7 +62,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-sm-6 col-md-3 item">
-                        <h3>Info</h3>
+                        <h3>Info v0.3</h3>
                         <ul>
                             <li><a>Web design  - Vex788</a></li>
                             <li><a>Development - Vex788</a></li>

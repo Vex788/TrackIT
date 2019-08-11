@@ -7,8 +7,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import trackit.demon.model.CUser;
 
+import java.beans.Transient;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,6 +20,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private UserService userService;
 
     @Override
+    @Transactional
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
         CUser CUser = userService.findByEmail(username);

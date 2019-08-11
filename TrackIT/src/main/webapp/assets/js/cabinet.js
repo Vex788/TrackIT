@@ -4,10 +4,12 @@ $(document).ready(function() {
 
 $("#currency_codes").click(function() {
     $('#url').val('');
+    $('#final_price').val('');
 });
 
 $("#url").click(function() {
     $('#currency_codes').val('');
+    $('#final_price').val('');
 });
 
 function loadCabinetDTO() {
@@ -33,7 +35,7 @@ function loadCabinetDTO() {
                         '<tr>'
                         + '<td>' + (i + 1) + '</td>'
                         + '<td><a href=\"' + data.siteDataCollection[i].siteUrl + '\">' + data.siteDataCollection[i].siteTitle + '</a></td>'
-                        + '<td style=\"width: 150px;\">' + data.siteDataCollection[i].startedPrice + ' ➡ ' + getFinishedPriceStr(data.siteDataCollection[i].finishPrice, data.siteDataCollection[i].increase) + '</td>'
+                        + '<td style=\"width: 250px;\">' + data.siteDataCollection[i].startedPrice + ' ➡ ' + getFinishedPriceStr(data.siteDataCollection[i].finishPrice, data.siteDataCollection[i].increase) + '</td>'
                         + '<td><button class=\"btn btn-dark btn-sm bg-success border rounded border-success shadow\" type=\"button\" onclick=\"onDeleteButton(' + i + ')\" id=\"report_a_drop_' + i + '\" style=\"font-family: \'Roboto\', sans-serif;font-style: normal;font-weight: normal;width: 60px;font-size: 15px;color: rgb(0,0,0);\">✖</button></td>'
                         + '</tr>'
                     );

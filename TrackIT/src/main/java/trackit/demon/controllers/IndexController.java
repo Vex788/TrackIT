@@ -2,13 +2,18 @@ package trackit.demon.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import trackit.demon.message.Message;
+import trackit.demon.model.CUser;
 import trackit.demon.model.UserLocation;
 import trackit.demon.retrievers.LocationRetriever;
 import trackit.demon.services.UserLocationServiceImpl;
+import trackit.demon.services.UserServiceImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +29,20 @@ public class IndexController implements ErrorController {
 
     @Autowired
     private LocationRetriever locationRetriever;
+
+    @Autowired
+    private UserServiceImpl userService;
+
+    private CUser getDBUser(HttpServletRequest request) {
+        HttpSession session = request.getSession(true);
+
+        SecurityContext securityContext = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
+
+        CUser dbCUser = userService.findByEmail(securityContext.getAuthentication().getName());
+
+        return dbCUser;
+    }
+
 
     private boolean isAnonymousUser(HttpServletRequest request) {
         HttpSession session = request.getSession(true);
@@ -41,7 +60,7 @@ public class IndexController implements ErrorController {
     // ToDo: refactor index page
     @GetMapping("/")
     public String onIndex(HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
+        /*String ip = request.getRemoteAddr();
 
         UserLocation userLocation = locationRetriever.getLocation(ip);
 
@@ -56,7 +75,7 @@ public class IndexController implements ErrorController {
             );
 
             userLocationService.addUserLocation(userLocation);
-        }
+        }*/
 
         return "login";
     }
@@ -152,5 +171,22 @@ public class IndexController implements ErrorController {
     @Override
     public String getErrorPath() {
         return "/error";
+    }
+
+    @RequestMapping("/logout")
+    public ResponseEntity<Message> onLogout(HttpServletRequest request) {
+        CUser user = getDBUser(request);
+
+        if (user != null) {
+            user.setOnline(false);
+            userService.updateUser(user);
+
+            HttpSession session = request.getSession(true);
+            session.removeAttribute("SPRING_SECURITY_CONTEXT");
+        }
+        return new ResponseEntity<>(
+                new Message("/logout", "Logout success."),
+                HttpStatus.OK
+        );
     }
 }

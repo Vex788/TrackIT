@@ -61,29 +61,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .oauth2Login()
                 .loginPage("/oauth_login")
-                .successHandler(authenticationSuccessHandler);
-
-        /*http.formLogin()
-                // указываем страницу с формой логина
-                .loginPage("/login")
-                // указываем action с формы логина
-                .loginProcessingUrl("/j_spring_security_check")
-                // указываем URL при неудачном логине
-                .failureUrl("/login?error")
-                // Указываем параметры логина и пароля с формы логина
-                .usernameParameter("email")
-                .passwordParameter("password")
-                // даем доступ к форме логина всем
-                .permitAll().and();
-
-        http.logout()
-                // разрешаем делать логаут всем
-                .permitAll()
-                // указываем URL логаута
+                .successHandler(authenticationSuccessHandler)
+                .and()
+                .logout()
                 .logoutUrl("/logout")
-                // указываем URL при удачном логауте
-                .logoutSuccessUrl("/login?logout")
-                // делаем не валидной текущую сессию
-                .invalidateHttpSession(true);*/
+                .logoutSuccessUrl("/");
     }
 }

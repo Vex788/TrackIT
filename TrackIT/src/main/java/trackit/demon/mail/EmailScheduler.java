@@ -1,6 +1,7 @@
 package trackit.demon.mail;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import trackit.demon.html.parser.SearchValueInHtml;
 import trackit.demon.model.CUser;
@@ -46,17 +47,18 @@ public class EmailScheduler {
         return false;
     }
 
-    //@Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedRate = 60000 * 30) // every 30 minutes
     public void sendNotifications() {
-        List<CUser> CUserList = userService.getAllUsers();
+        System.out.println("Starting scheduler");
+        List<CUser> userList = userService.getAllUsers();
 
-        if (CUserList != null && !CUserList.isEmpty()) {
-            for (CUser CUser : CUserList) {
-                if (CUser.getSiteDataCollection() != null && !CUser.getSiteDataCollection().isEmpty()) {
-                    for (SiteData siteData : CUser.getSiteDataCollection()) {
+        if (userList != null && !userList.isEmpty()) {
+            for (CUser user : userList) {
+                if (user.getSiteDataCollection().size() > 0) {
+                    for (SiteData siteData : user.getSiteDataCollection()) {
                         search = new SearchValueInHtml();
                         String[] currencyCodes = new String[2];
-                        currencyCodes = siteData.getCurrencyCodes().split("/");
+                        currencyCodes = siteData.getCurrencyCodes().split("/"); // get currency usd/uah -> { "usd", "uah" }
 
                         boolean found = search.getData(siteData.getSiteUrl(), currencyCodes[0], currencyCodes[1]); // search price on a page
 
@@ -67,7 +69,11 @@ public class EmailScheduler {
                                     siteData.isIncrease(),
                                     Double.parseDouble(search.getPriceValue()
                                     ))) {
-                                emailService.sendMessage(CUser.toUserCabinetDTO(), siteData, Double.parseDouble(search.getPriceValue()));
+                                user.getSiteDataCollection().remove(siteData);
+                                System.out.println("Send notification");
+                                new Thread(() -> { // send mail thread
+                                    emailService.sendMessage(user.toUserCabinetDTO(), siteData, Double.parseDouble(search.getPriceValue()));
+                                }).start();
                             }
                         }
                     }

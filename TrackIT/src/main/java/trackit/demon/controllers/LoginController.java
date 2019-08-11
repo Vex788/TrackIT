@@ -20,7 +20,9 @@ import trackit.demon.providers.CustomAuthenticationProvider;
 import trackit.demon.services.UserServiceImpl;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 
 @RestController
 public class LoginController {
@@ -41,16 +43,6 @@ public class LoginController {
 
     private boolean passwordMatching(String passwordHash, String password) {
         return passwordEncoder.matches(password, passwordHash);
-    }
-
-    private CUser getDBUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(true);
-
-        SecurityContext securityContext = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
-
-        CUser dbCUser = userService.findByEmail(securityContext.getAuthentication().getName());
-
-        return dbCUser;
     }
 
     @PostMapping("/login")
@@ -106,11 +98,14 @@ public class LoginController {
     }
 
     @GetMapping("/oauth_login")
-    public ResponseEntity<LoginViaDTO> getLoginPage() {
+    public ResponseEntity<LoginViaDTO> getLoginPage(HttpServletResponse response) throws IOException {
         ClientRegistration clientRegistrationGoogle = clientRegistrationRepository
                 .findByRegistrationId("google");
         ClientRegistration clientRegistrationFacebook = clientRegistrationRepository
                 .findByRegistrationId("facebook");
+
+        if (clientRegistrationGoogle == null && clientRegistrationFacebook == null)
+            response.sendRedirect("/");
 
         return new ResponseEntity<>(
                 new LoginViaDTO(
@@ -145,20 +140,4 @@ public class LoginController {
         );
     }
     //ToDo: add login?error controller, logout?logout
-    @GetMapping("/logout")
-    public ResponseEntity<Message> onLogout(HttpServletRequest request) {
-        CUser user = getDBUser(request);
-
-        if (user != null) {
-            user.setOnline(false);
-            userService.updateUser(user);
-
-            HttpSession session = request.getSession(true);
-            session.removeAttribute("SPRING_SECURITY_CONTEXT");
-        }
-        return new ResponseEntity<>(
-                new Message("/logout", "Logout success."),
-                HttpStatus.OK
-        );
-    }
 }

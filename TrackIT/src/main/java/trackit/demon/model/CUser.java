@@ -9,7 +9,6 @@ import trackit.demon.dto.UserLoginDTO;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 
 @Entity
 @Data
@@ -31,8 +30,8 @@ public class CUser {
 
     private String ip;
 
-    @ElementCollection
-    private Collection<SiteData> siteDataCollection;
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Collection<SiteData> siteDataCollection = new ArrayList<>();
 
     private boolean isOnline = false;
 
@@ -49,9 +48,6 @@ public class CUser {
     }
 
     public boolean addSearchStructureToCollection(SiteData siteData) {
-        if (siteDataCollection == null || siteDataCollection.isEmpty())
-            siteDataCollection = new ArrayList<>();
-
         if (!siteDataCollection.contains(siteData)) {
             siteDataCollection.add(siteData);
             return true;
