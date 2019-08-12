@@ -50,8 +50,8 @@
                     <div class="col"><button class="btn btn-success btn-lg bg-success border rounded border-success shadow" type="button" id="submit" onclick="login()" style="width: 100%;margin-top: 7px;font-family: Roboto, sans-serif;font-style: normal;font-weight: normal;color: rgb(0,0,0);">Login</button></div>
                 </div>
                     <div class="row">
-                        <div class="col"><button type="button" class="btn btn-success btn-sm bg-success border rounded border-success shadow" style="width: 100%;margin-top: 7px;font-family: Roboto, sans-serif;font-style: normal;font-weight: normal;color: rgb(0,0,0);" onclick="googleLogin();">Google</button></div>
-                        <div class="col"><button type="button" class="btn btn-success btn-sm bg-success border rounded border-success shadow" style="width: 100%;margin-top: 7px;font-family: Roboto, sans-serif;font-style: normal;font-weight: normal;color: rgb(0,0,0);" onclick="facebookLogin();">Facebook</button></div>
+                        <div class="col"><button type="button" class="btn btn-success btn-sm bg-success border rounded border-success shadow" style="border-color:#E93F2E!important;background-color:#E93F2E!important;width: 100%;margin-top: 7px;font-family: Roboto, sans-serif;font-style: normal;font-weight: normal;color: rgb(0,0,0);" onclick="googleLogin();">Google</button></div>
+                        <div class="col"><button type="button" class="btn btn-success btn-sm bg-success border rounded border-success shadow" style="border-color:#4267b2!important;background-color:#4267b2!important;width: 100%;margin-top: 7px;font-family: Roboto, sans-serif;font-style: normal;font-weight: normal;color: rgb(255,255,255);" onclick="facebookLogin();">Facebook</button></div>
                     </div>
                 </form>
             </div>

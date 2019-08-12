@@ -24,7 +24,7 @@ public class EmailServiceImpl implements EmailService {
             "    font-weight: bold;\n" +
             "\">It seems it's time to buy it.\n" +
             "        <br><img src=\"https://i.imgur.com/eFfmdb3.jpg\" alt=\"Fry says shut up and take my money\" width=\"562\" height=\"351\" style=\"margin-right: 0px;\"><br>\n" +
-            "        Starting price [ %s ], current price [ %s ].<br><a href=\"%s\">Page with item</a>.\n" +
+            "        [ %s ], current price [ %s ].<br><a href=\"%s\">Page with item</a>.\n" +
             "</h3></center>    \n" +
             "\n";
     private String confirmEmailTemplate =

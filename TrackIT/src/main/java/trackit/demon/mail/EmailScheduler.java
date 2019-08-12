@@ -47,14 +47,14 @@ public class EmailScheduler {
         return false;
     }
 
-    @Scheduled(fixedRate = 60000 * 30) // every 30 minutes
+    @Scheduled(fixedRate = 60000) // every 30 minutes
     public void sendNotifications() {
         System.out.println("Starting scheduler");
         List<CUser> userList = userService.getAllUsers();
 
         if (userList != null && !userList.isEmpty()) {
             for (CUser user : userList) {
-                if (user.getSiteDataCollection().size() > 0) {
+                if (user.getSiteDataCollection() != null && !user.getSiteDataCollection().isEmpty()) {
                     for (SiteData siteData : user.getSiteDataCollection()) {
                         search = new SearchValueInHtml();
                         String[] currencyCodes = new String[2];
@@ -62,19 +62,18 @@ public class EmailScheduler {
 
                         boolean found = search.getData(siteData.getSiteUrl(), currencyCodes[0], currencyCodes[1]); // search price on a page
 
-                        if (found) {
-                            if (conditionIsMet(
+                        if (true) {
+                            /*if (conditionIsMet(
                                     siteData.getStartedPrice(),
                                     siteData.getFinishPrice(),
                                     siteData.isIncrease(),
                                     Double.parseDouble(search.getPriceValue()
-                                    ))) {
+                                    ))) {*/
+                                emailService.sendMessage(user.toUserCabinetDTO(), siteData, Double.parseDouble(search.getPriceValue()));
+
                                 user.getSiteDataCollection().remove(siteData);
-                                System.out.println("Send notification");
-                                new Thread(() -> { // send mail thread
-                                    emailService.sendMessage(user.toUserCabinetDTO(), siteData, Double.parseDouble(search.getPriceValue()));
-                                }).start();
-                            }
+                                userService.updateUser(user);
+                           // }
                         }
                     }
                 }

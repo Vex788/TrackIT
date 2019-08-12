@@ -55,6 +55,7 @@ public class AuthHandler implements AuthenticationSuccessHandler {
             newUser.setPassword(getRandomPassword());
             newUser.setRole(UserRole.USER);
             newUser.setOnline(true);
+            newUser.setAccountConfirmed(true);
 
             userService.addUser(newUser);
         } else {

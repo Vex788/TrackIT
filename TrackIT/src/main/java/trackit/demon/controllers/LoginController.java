@@ -104,9 +104,6 @@ public class LoginController {
         ClientRegistration clientRegistrationFacebook = clientRegistrationRepository
                 .findByRegistrationId("facebook");
 
-        if (clientRegistrationGoogle == null && clientRegistrationFacebook == null)
-            response.sendRedirect("/");
-
         return new ResponseEntity<>(
                 new LoginViaDTO(
                         clientRegistrationGoogle.getClientName(),
